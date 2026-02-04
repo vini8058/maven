@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     environment {
-       
-        APP_QA = "qaenv"
+        APP_QA   = "qaenv"
         APP_PROD = "prodenv"
         WAR_NAME = "webapp.war"
 
-        // Servers (PRIVATE IPs)
         QA_SERVER   = "172.31.46.179"
         PROD_SERVER = "172.31.41.171"
 
@@ -16,9 +14,6 @@ pipeline {
 
     stages {
 
-        /* =========================
-           STAGE 1 : CI (BUILD)
-        ========================== */
         stage('Checkout Code') {
             steps {
                 git branch: 'fix-build',
@@ -28,9 +23,7 @@ pipeline {
 
         stage('Build & Unit Test') {
             steps {
-                sh '''
-                  mvn clean package
-                '''
+                sh 'mvn clean package'
             }
         }
 
@@ -41,74 +34,71 @@ pipeline {
         }
 
         /* =========================
-   STAGE 2 : DEPLOY TO QA
-========================= */
-stage('Deploy to QA') {
-    steps {
-        sh """
-        echo "Stopping Tomcat on QA..."
-        ssh ubuntu@$QA_SERVER "sudo systemctl stop tomcat10"
+           DEPLOY TO QA
+        ========================== */
+        stage('Deploy to QA') {
+            steps {
+                sh """
+                echo "Stopping Tomcat on QA..."
+                ssh ubuntu@${QA_SERVER} "sudo systemctl stop tomcat10"
 
-        echo "Copying WAR to QA..."
-        scp webapp/target/$WAR_NAME ubuntu@$QA_SERVER:/tmp/$WAR_NAME
+                echo "Copying WAR to QA..."
+                scp webapp/target/${WAR_NAME} ubuntu@${QA_SERVER}:/tmp/${WAR_NAME}
 
-        echo "Deploying WAR on QA..."
-        ssh ubuntu@$QA_SERVER << 'EOF'
-        sudo rm -rf $TOMCAT_WEBAPPS/$APP_QA*
-        sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_QA.war
-        sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_QA.war
-        sudo systemctl start tomcat10
+                echo "Deploying WAR on QA..."
+                ssh ubuntu@${QA_SERVER} << 'EOF'
+sudo rm -rf ${TOMCAT_WEBAPPS}/${APP_QA}*
+sudo mv /tmp/${WAR_NAME} ${TOMCAT_WEBAPPS}/${APP_QA}.war
+sudo chown tomcat:tomcat ${TOMCAT_WEBAPPS}/${APP_QA}.war
+sudo systemctl start tomcat10
 EOF
 
-        echo "QA Deployment SUCCESS"
-        """
-    }
-}
+                echo "QA Deployment SUCCESS"
+                """
+            }
+        }
 
-/* =========================
-   STAGE 3 : APPROVAL
-========================= */
-stage('Approval for PROD') {
-    steps {
-        input(
-            message: '⚠️ Deploy to PRODUCTION?',
-            ok: 'YES, DEPLOY',
-            submitter: 'krishna'
-        )
-    }
-}
+        /* =========================
+           APPROVAL
+        ========================== */
+        stage('Approval for PROD') {
+            steps {
+                input message: 'Deploy to PRODUCTION?', ok: 'Deploy'
+            }
+        }
 
-/* =========================
-   STAGE 4 : DEPLOY TO PROD
-========================= */
-stage('Deploy to PROD') {
-    steps {
-        sh """
-        echo "Stopping Tomcat on PROD..."
-        ssh ubuntu@$PROD_SERVER "sudo systemctl stop tomcat10"
+        /* =========================
+           DEPLOY TO PROD
+        ========================== */
+        stage('Deploy to PROD') {
+            steps {
+                sh """
+                echo "Stopping Tomcat on PROD..."
+                ssh ubuntu@${PROD_SERVER} "sudo systemctl stop tomcat10"
 
-        echo "Copying WAR to PROD..."
-        scp webapp/target/$WAR_NAME ubuntu@$PROD_SERVER:/tmp/$WAR_NAME
+                echo "Copying WAR to PROD..."
+                scp webapp/target/${WAR_NAME} ubuntu@${PROD_SERVER}:/tmp/${WAR_NAME}
 
-        echo "Deploying WAR on PROD..."
-        ssh ubuntu@$PROD_SERVER << 'EOF'
-        sudo rm -rf $TOMCAT_WEBAPPS/$APP_PROD*
-        sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_PROD.war
-        sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_PROD.war
-        sudo systemctl start tomcat10
+                echo "Deploying WAR on PROD..."
+                ssh ubuntu@${PROD_SERVER} << 'EOF'
+sudo rm -rf ${TOMCAT_WEBAPPS}/${APP_PROD}*
+sudo mv /tmp/${WAR_NAME} ${TOMCAT_WEBAPPS}/${APP_PROD}.war
+sudo chown tomcat:tomcat ${TOMCAT_WEBAPPS}/${APP_PROD}.war
+sudo systemctl start tomcat10
 EOF
 
-        echo "PROD Deployment SUCCESS"
-        """
+                echo "PROD Deployment SUCCESS"
+                """
+            }
+        }
     }
-}
 
     post {
         success {
-            echo " CI/CD PIPELINE COMPLETED SUCCESSFULLY"
+            echo "🎉 CI/CD PIPELINE COMPLETED SUCCESSFULLY"
         }
         failure {
-            echo " PIPELINE FAILED"
+            echo "❌ PIPELINE FAILED"
         }
     }
 }
