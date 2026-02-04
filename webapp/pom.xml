@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/maven-v4_0_0.xsd">
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- Parent POM -->
+  <!-- INHERIT FROM PARENT -->
   <parent>
     <groupId>com.example.maven-project</groupId>
     <artifactId>maven-project</artifactId>
@@ -13,50 +13,20 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <!-- Module info -->
   <artifactId>webapp</artifactId>
   <packaging>war</packaging>
-  <name>Webapp</name>
-  <description>Webapp.</description>
 
-  <!-- Build configuration -->
   <build>
-    <finalName>${project.artifactId}</finalName>
+    <finalName>webapp</finalName>
 
     <plugins>
-
-      <!-- Jetty plugin (for local run if needed) -->
-      <plugin>
-        <groupId>org.mortbay.jetty</groupId>
-        <artifactId>jetty-maven-plugin</artifactId>
-      </plugin>
-
-      <!-- FIX: WAR plugin compatible with Java 17 -->
+      <!-- Version comes from parent (3.4.0) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
-        <version>3.4.0</version>
       </plugin>
-
     </plugins>
   </build>
-
-  <!-- Dependencies -->
-  <dependencies>
-
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax.servlet.jsp</groupId>
-      <artifactId>jsp-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-  </dependencies>
 
 </project>
 
