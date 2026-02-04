@@ -1,0 +1,112 @@
+pipeline {
+    agent any
+
+    environment {
+        // Common
+        APP_QA = "qaenv"
+        APP_PROD = "prodenv"
+        WAR_NAME = "webapp.war"
+
+        // Servers (PRIVATE IPs)
+        QA_SERVER   = "172.31.46.179"
+        PROD_SERVER = "172.31.41.171"
+
+        TOMCAT_WEBAPPS = "/var/lib/tomcat10/webapps"
+    }
+
+    stages {
+
+        /* =========================
+           STAGE 1 : CI (BUILD)
+        ========================== */
+        stage('Checkout Code') {
+            steps {
+                git branch: 'fix-build',
+                    url: 'https://github.com/vini8058/maven.git'
+            }
+        }
+
+        stage('Build & Unit Test') {
+            steps {
+                sh '''
+                  mvn clean package
+                '''
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'webapp/target/webapp.war', fingerprint: true
+            }
+        }
+
+        /* =========================
+           STAGE 2 : DEPLOY TO QA
+        ========================== */
+        stage('Deploy to QA') {
+            steps {
+                sh '''
+                echo "Stopping Tomcat on QA..."
+                ssh ubuntu@$QA_SERVER "sudo systemctl stop tomcat10"
+
+                echo "Copying WAR to QA..."
+                scp webapp/target/$WAR_NAME ubuntu@$QA_SERVER:/tmp/$WAR_NAME
+
+                echo "Deploying WAR on QA..."
+                ssh ubuntu@$QA_SERVER << EOF
+                  sudo rm -rf $TOMCAT_WEBAPPS/$APP_QA*
+                  sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_QA.war
+                  sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_QA.war
+                  sudo systemctl start tomcat10
+                EOF
+
+                echo "QA Deployment SUCCESS"
+                '''
+            }
+        }
+
+        /* =========================
+           STAGE 3 : MANUAL APPROVAL
+        ========================== */
+        stage('Approval for PROD') {
+            steps {
+                input message: 'Deploy to PROD?', ok: 'Deploy'
+            }
+        }
+
+        /* =========================
+           STAGE 4 : DEPLOY TO PROD
+        ========================== */
+        stage('Deploy to PROD') {
+            steps {
+                sh '''
+                echo "Stopping Tomcat on PROD..."
+                ssh ubuntu@$PROD_SERVER "sudo systemctl stop tomcat10"
+
+                echo "Copying WAR to PROD..."
+                scp webapp/target/$WAR_NAME ubuntu@$PROD_SERVER:/tmp/$WAR_NAME
+
+                echo "Deploying WAR on PROD..."
+                ssh ubuntu@$PROD_SERVER << EOF
+                  sudo rm -rf $TOMCAT_WEBAPPS/$APP_PROD*
+                  sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_PROD.war
+                  sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_PROD.war
+                  sudo systemctl start tomcat10
+                EOF
+
+                echo "PROD Deployment SUCCESS"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo " CI/CD PIPELINE COMPLETED SUCCESSFULLY"
+        }
+        failure {
+            echo " PIPELINE FAILED"
+        }
+    }
+}
+
