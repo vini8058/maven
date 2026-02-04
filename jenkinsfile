@@ -41,64 +41,67 @@ pipeline {
         }
 
         /* =========================
-           STAGE 2 : DEPLOY TO QA
-        ========================== */
-        stage('Deploy to QA') {
-            steps {
-                sh '''
-                echo "Stopping Tomcat on QA..."
-                ssh ubuntu@$QA_SERVER "sudo systemctl stop tomcat10"
+   STAGE 2 : DEPLOY TO QA
+========================= */
+stage('Deploy to QA') {
+    steps {
+        sh """
+        echo "Stopping Tomcat on QA..."
+        ssh ubuntu@$QA_SERVER "sudo systemctl stop tomcat10"
 
-                echo "Copying WAR to QA..."
-                scp webapp/target/$WAR_NAME ubuntu@$QA_SERVER:/tmp/$WAR_NAME
+        echo "Copying WAR to QA..."
+        scp webapp/target/$WAR_NAME ubuntu@$QA_SERVER:/tmp/$WAR_NAME
 
-                echo "Deploying WAR on QA..."
-                ssh ubuntu@$QA_SERVER << EOF
-                  sudo rm -rf $TOMCAT_WEBAPPS/$APP_QA*
-                  sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_QA.war
-                  sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_QA.war
-                  sudo systemctl start tomcat10
-                EOF
+        echo "Deploying WAR on QA..."
+        ssh ubuntu@$QA_SERVER << 'EOF'
+        sudo rm -rf $TOMCAT_WEBAPPS/$APP_QA*
+        sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_QA.war
+        sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_QA.war
+        sudo systemctl start tomcat10
+EOF
 
-                echo "QA Deployment SUCCESS"
-                '''
-            }
-        }
-
-        /* =========================
-           STAGE 3 : MANUAL APPROVAL
-        ========================== */
-        stage('Approval for PROD') {
-            steps {
-                input message: 'Deploy to PROD?', ok: 'Deploy'
-            }
-        }
-
-        /* =========================
-           STAGE 4 : DEPLOY TO PROD
-        ========================== */
-        stage('Deploy to PROD') {
-            steps {
-                sh '''
-                echo "Stopping Tomcat on PROD..."
-                ssh ubuntu@$PROD_SERVER "sudo systemctl stop tomcat10"
-
-                echo "Copying WAR to PROD..."
-                scp webapp/target/$WAR_NAME ubuntu@$PROD_SERVER:/tmp/$WAR_NAME
-
-                echo "Deploying WAR on PROD..."
-                ssh ubuntu@$PROD_SERVER << EOF
-                  sudo rm -rf $TOMCAT_WEBAPPS/$APP_PROD*
-                  sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_PROD.war
-                  sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_PROD.war
-                  sudo systemctl start tomcat10
-                EOF
-
-                echo "PROD Deployment SUCCESS"
-                '''
-            }
-        }
+        echo "QA Deployment SUCCESS"
+        """
     }
+}
+
+/* =========================
+   STAGE 3 : APPROVAL
+========================= */
+stage('Approval for PROD') {
+    steps {
+        input(
+            message: '⚠️ Deploy to PRODUCTION?',
+            ok: 'YES, DEPLOY',
+            submitter: 'krishna'
+        )
+    }
+}
+
+/* =========================
+   STAGE 4 : DEPLOY TO PROD
+========================= */
+stage('Deploy to PROD') {
+    steps {
+        sh """
+        echo "Stopping Tomcat on PROD..."
+        ssh ubuntu@$PROD_SERVER "sudo systemctl stop tomcat10"
+
+        echo "Copying WAR to PROD..."
+        scp webapp/target/$WAR_NAME ubuntu@$PROD_SERVER:/tmp/$WAR_NAME
+
+        echo "Deploying WAR on PROD..."
+        ssh ubuntu@$PROD_SERVER << 'EOF'
+        sudo rm -rf $TOMCAT_WEBAPPS/$APP_PROD*
+        sudo mv /tmp/$WAR_NAME $TOMCAT_WEBAPPS/$APP_PROD.war
+        sudo chown tomcat:tomcat $TOMCAT_WEBAPPS/$APP_PROD.war
+        sudo systemctl start tomcat10
+EOF
+
+        echo "PROD Deployment SUCCESS"
+        """
+    }
+}
 
     post {
         success {
