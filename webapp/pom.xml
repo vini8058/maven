@@ -5,7 +5,6 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- INHERIT FROM PARENT -->
   <parent>
     <groupId>com.example.maven-project</groupId>
     <artifactId>maven-project</artifactId>
@@ -17,16 +16,21 @@
   <packaging>war</packaging>
 
   <build>
-    <finalName>webapp</finalName>
+  <finalName>${project.artifactId}</finalName>
 
-    <plugins>
-      <!-- Version comes from parent (3.4.0) -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+  <plugins>
 
-</project>
+    <!-- REQUIRED: Explicit WAR plugin -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-war-plugin</artifactId>
+      <version>3.4.0</version>
+      <configuration>
+        <failOnMissingWebXml>false</failOnMissingWebXml>
+      </configuration>
+    </plugin>
+
+  </plugins>
+</build>
+
 
