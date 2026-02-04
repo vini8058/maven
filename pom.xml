@@ -21,36 +21,26 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
   </properties>
 
+  <!-- ONLY VERSION MANAGEMENT HERE -->
   <build>
-
-    <!-- ✅ THIS IS THE MOST IMPORTANT FIX -->
     <pluginManagement>
       <plugins>
 
-        <!-- WAR plugin compatible with Java 17 / 21 -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-war-plugin</artifactId>
           <version>3.4.0</version>
         </plugin>
 
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.11.0</version>
+        </plugin>
+
       </plugins>
     </pluginManagement>
-
-    <plugins>
-
-      <!-- Compiler plugin -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-      </plugin>
-
-    </plugins>
   </build>
 
 </project>
+
