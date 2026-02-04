@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Common
+       
         APP_QA = "qaenv"
         APP_PROD = "prodenv"
         WAR_NAME = "webapp.war"
